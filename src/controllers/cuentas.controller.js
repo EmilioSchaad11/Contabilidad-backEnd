@@ -1,9 +1,8 @@
-const { response } = require('express');
 const { listAllCuentas, listCuentasSort, createCuentasNew, findCuentas, updataCuentas, removecuenta } = require('../store/cuentas.store');
 const RESPONSE = require('../utils/response');
 
 async function listarCuentas(req, res) {
-  listAllCuentas()
+  await listAllCuentas()
     .then((cuentasEncontradas) => {
       return RESPONSE.success(req, res, cuentasEncontradas, 200);
     })
@@ -41,7 +40,7 @@ async function createCuentas(req, res) {
   const cuenta = {
     nombre,
     tipo,
-    id_cuenta: getLastItem.length == 0 ? 1 : getLastItem.id_cuenta + 1,
+    id_cuenta: getLastItem == null ? 1 : getLastItem.id_cuenta + 1,
   };
 
   createCuentasNew(cuenta)
