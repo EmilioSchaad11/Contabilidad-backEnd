@@ -6,11 +6,11 @@ const {
   crearFactura,
   modificarFactura,
   eliminarFactura
-} = require('../controllers/facturas.controller');
+} = require('../controllers/factura.controller');
 
 router.get('/', listarFacturas);
 router.get('/:idFactura', listarUnaFactura);
-router.post('/', crearFactura);
+router.post('/create', crearFactura);
 router.put('/:idFactura', modificarFactura);
 router.delete('/:idFactura', eliminarFactura);
 

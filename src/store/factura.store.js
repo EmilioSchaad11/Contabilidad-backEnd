@@ -1,4 +1,5 @@
-const model = require('../models/factura.model');
+const model = require('../model/Factura.model');
+
 
 // Listar todas las facturas
 async function listAllFacturas() {
@@ -27,7 +28,7 @@ async function updateFactura(idFactura, body) {
 }
 
 // Eliminar una factura
-async function removeFactura(idFactura) {
+async function deleteFactura(idFactura) {
   return await model.findOneAndDelete({ id_factura: idFactura });
 }
 
@@ -37,5 +38,5 @@ module.exports = {
   findFactura,
   createFactura,
   updateFactura,
-  removeFactura,
+  deleteFactura,
 };

@@ -1,3 +1,4 @@
+
 const {
     listAllFacturas,
     listFacturasSort,
@@ -5,7 +6,7 @@ const {
     createFactura,
     updateFactura,
     deleteFactura
-  } = require('../store/facturas.store');
+  } = require('../store/factura.store');
   const RESPONSE = require('../utils/response');
   
   async function listarFacturas(req, res) {
