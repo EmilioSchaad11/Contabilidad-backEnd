@@ -9,4 +9,4 @@ const FacturaSchema = new mongoose.Schema({
   importe_total: { type: Number, required: true }
 });
 
-module.exports = mongoose.model('Factura', FacturaSchema);
+module.exports = mongoose.model('facturas', FacturaSchema);

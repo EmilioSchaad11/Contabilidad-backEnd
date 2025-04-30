@@ -6,7 +6,8 @@ const {
   crearFactura,
   modificarFactura,
   eliminarFactura
-} = require('../controllers/factura.controller');
+
+} = require('../controllers/Factura.controller');
 
 router.get('/', listarFacturas);
 router.get('/:idFactura', listarUnaFactura);
