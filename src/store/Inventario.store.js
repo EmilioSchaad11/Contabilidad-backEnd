@@ -8,7 +8,7 @@ async function listAllInventarios() {
 
 // Función para encontrar un inventario por su ID
 async function findInventario(idInventario) {
-  return await Inventario.findById(idInventario);
+  return await Inventario.findOne({ id_inventario: idInventario });
 }
 
 // Función para crear un nuevo inventario
@@ -19,12 +19,12 @@ async function createInventario(inventario) {
 
 // Función para actualizar un inventario por su ID
 async function updateInventario(idInventario, data) {
-  return await Inventario.findByIdAndUpdate(idInventario, data, { new: true });
+  return await Inventario.findOneAndUpdate({ id_inventario: idInventario }, data, { new: true });
 }
 
 // Función para eliminar un inventario por su ID
 async function deleteInventario(idInventario) {
-  return await Inventario.findByIdAndDelete(idInventario);
+  return await Inventario.findOneAndDelete({ id_inventario: idInventario });
 }
 
 module.exports = {
@@ -32,5 +32,5 @@ module.exports = {
   findInventario,
   createInventario,
   updateInventario,
-  deleteInventario
+  deleteInventario,
 };

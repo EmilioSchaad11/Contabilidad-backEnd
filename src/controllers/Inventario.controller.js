@@ -3,10 +3,11 @@ const RESPONSE = require('../utils/response');
 
 async function listarInventarios(req, res) {
   try {
-    await listAllInventarios().then((resp)=> {
+    await listAllInventarios().then((resp) => {
       console.log(resp);
-      
-      return RESPONSE.success(req, res, resp, 200);})
+
+      return RESPONSE.success(req, res, resp, 200);
+    });
   } catch (error) {
     console.error(error);
     return RESPONSE.error(req, res, 'Error al listar inventarios', 500);
@@ -17,6 +18,7 @@ async function listarUnInventario(req, res) {
   const { idInventario } = req.params;
   try {
     const inventario = await findInventario(idInventario);
+
     if (!inventario) return RESPONSE.error(req, res, 'Inventario no encontrado', 404);
     return RESPONSE.success(req, res, inventario, 200);
   } catch (error) {
@@ -45,7 +47,7 @@ async function crearInventario(req, res) {
       monto,
       cuenta,
       descripcion,
-      categoria
+      categoria,
     };
 
     // Guardar el inventario
@@ -89,5 +91,5 @@ module.exports = {
   listarUnInventario,
   crearInventario,
   modificarInventario,
-  eliminarInventario
+  eliminarInventario,
 };
