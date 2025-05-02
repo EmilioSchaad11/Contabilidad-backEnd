@@ -1,8 +1,36 @@
-const { listLibroMayorSort, crearLibroMayor } = require('../store/libromayor.store');
+const { updateLibroMayorStore, listLibroMayorSort, findLibroMayor, crearLibroMayor, findLibroMayorOpcional, listLibroMayorSortOne, removeLibroMayor } = require('../store/libromayor.store');
 const { listDetallePartidaDiarioCondicion, listPartidaDiarioCondicion } = require('../store/partidadiario.store');
 const RESPONSE = require('../utils/response');
 
-async function crearLibromayor(req, res) {
+// Listar todos los libros mayores.
+async function listarAllLibroMayor(req, res) {
+  await listLibroMayorSort()
+    .then((libroMayorEncontrados) => {
+      return RESPONSE.success(req, res, libroMayorEncontrados, 200);
+    })
+    .catch((err) => {
+      console.log('Error', err);
+      return RESPONSE.error(req, res, 'Error interno', 500);
+    });
+}
+// Encontrar solo un libro mayor
+async function listarOneLibroMayor(req, res) {
+  const idMayor = req.params.idMayor;
+  findLibroMayor(idMayor)
+    .then((libroMayorEncontradas) => {
+      let response = [];
+      if (libroMayorEncontradas != null) {
+        response = libroMayorEncontradas;
+      }
+      return RESPONSE.success(req, res, response, 200);
+    })
+    .catch((err) => {
+      console.log('Error', err);
+      return RESPONSE.error(req, res, 'Error interno', 500);
+    });
+}
+// Crear libro mayor.
+async function crearLibromayor(req, res, isUpdate = false) {
   const { id_cuenta, fecha_inicio, fecha_fin } = req.body;
 
   // Validar fechas
@@ -12,6 +40,8 @@ async function crearLibromayor(req, res) {
   if (isNaN(fechaInicio) || isNaN(fechaFin)) {
     return res.status(400).json({ error: 'Formato de fecha inválido. Use YYYY-MM-DD' });
   }
+
+  let modelLibroMayorUpdate = {};
 
   await listDetallePartidaDiarioCondicion([
     {
@@ -62,8 +92,7 @@ async function crearLibromayor(req, res) {
     },
   ])
     .then(async (resp) => {
-      // console.log(resp);
-      const getLastItem = await listLibroMayorSort()
+      const getLastItem = await listLibroMayorSortOne()
         .then((result) => result)
         .catch((err) => {
           console.log('Error', err);
@@ -80,6 +109,9 @@ async function crearLibromayor(req, res) {
         movimientos: [],
       };
 
+      let debitoSuma = 0;
+      let creditoSuma = 0;
+
       for (let elements = 0; elements < resp.length; elements++) {
         const el = resp[elements];
         const dataPartido_diario = await listPartidaDiarioCondicion([{ $match: { id_partidaDiario: el.id_partidaDiario } }]).then((r) => {
@@ -94,17 +126,33 @@ async function crearLibromayor(req, res) {
         };
 
         movimientoEL.debito = el.Debe;
+        debitoSuma = Number(debitoSuma) + Number(el.Debe);
         movimientoEL.credito = el.Haber;
+        creditoSuma = Number(creditoSuma) + Number(el.Haber);
         movimientoEL.fecha = dataPartido_diario[0].Fecha;
         movimientoEL.descripcion = dataPartido_diario[0].Descripcion;
 
         modelLibroMayor.movimientos.push(movimientoEL);
       }
 
-      // console.log(modelLibroMayor);
+      let librosMayoresCreados = await findLibroMayorOpcional({
+        id_cuenta, // Filtra por id_cuenta: 6
+        fecha_fin: { $lt: fechaInicio }, // Fecha fin anterior a 2025-08-01
+      });
+
+      if (librosMayoresCreados !== null) {
+        modelLibroMayor.saldo_inicial = librosMayoresCreados.saldo_final;
+      }
+
+      modelLibroMayor.saldo_final = modelLibroMayor.saldo_inicial + (debitoSuma - creditoSuma);
+      if (isUpdate == true) {
+        modelLibroMayorUpdate = modelLibroMayor;
+        return true;
+      }
+
       await crearLibroMayor(modelLibroMayor)
-        .then((cuentaCreada) => {
-          return RESPONSE.success(req, res, cuentaCreada, 201);
+        .then((mayorCreado) => {
+          return RESPONSE.success(req, res, mayorCreado, 201);
         })
         .catch((err) => {
           console.log(err);
@@ -115,8 +163,78 @@ async function crearLibromayor(req, res) {
       console.log('Error', err);
       return RESPONSE.error(req, res, 'Error interno', 500);
     });
+
+  if (isUpdate) {
+    return modelLibroMayorUpdate;
+  }
+}
+
+async function updateLibroMayor(req, res) {
+  const idMayor = req.params.idMayor;
+  let nn = crearLibromayor(req, res, true)
+    .then(async (result) => {
+      delete result.id_mayor;
+      await updateLibroMayorStore(idMayor, result)
+        .then((mayorModificada) => RESPONSE.success(req, res, mayorModificada, 200))
+        .catch((err) => {
+          console.log(err);
+          RESPONSE.error(req, res, 'Error a la hora de encontrar cuenta', 500);
+        });
+    })
+    .catch((err) => {
+      console.log(err);
+      return RESPONSE.error(req, res, 'Error interno', 500);
+    });
+
+  return;
+  findCuentas(idCuenta)
+    .then((cuentaEncontrada) => {
+      if (!cuentaEncontrada) {
+        return RESPONSE.error(req, res, 'Cuenta no encontrada', 404);
+      } else {
+        const parametros = req.body;
+        updataCuentas(idCuenta, parametros)
+          .then((cuentaModificada) => RESPONSE.success(req, res, cuentaModificada, 200))
+          .catch((err) => {
+            console.log(err);
+            RESPONSE.error(req, res, 'Error a la hora de encontrar cuenta', 500);
+          });
+      }
+    })
+    .catch((err) => {
+      console.log(err);
+      return RESPONSE.error(req, res, 'Error en la busqueda');
+    });
+}
+
+async function deleteLibroMayor(req, res) {
+  const idMayor = req.params.idMayor;
+
+  findLibroMayor(idMayor)
+    .then((libroMayorEncontrado) => {
+      if (libroMayorEncontrado) {
+        removeLibroMayor(idMayor)
+          .then(() => {
+            return RESPONSE.success(req, res, 'Libro Mayor eliminado con exito!!', 200);
+          })
+          .catch((err) => {
+            console.log(err);
+            return RESPONSE.error(req, res, 'Error interno', 500);
+          });
+      } else {
+        return RESPONSE.error(req, res, 'Libro Mayor no existente. ', 404);
+      }
+    })
+    .catch((err) => {
+      console.log(err);
+      return RESPONSE.error(req, res, 'Error interno', 500);
+    });
 }
 
 module.exports = {
+  listarAllLibroMayor,
+  listarOneLibroMayor,
   crearLibromayor,
+  deleteLibroMayor,
+  updateLibroMayor,
 };

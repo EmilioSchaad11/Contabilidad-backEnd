@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { crearLibromayor } = require('../controllers/libromayor.controller');
+const { listarAllLibroMayor, listarOneLibroMayor, crearLibromayor, deleteLibroMayor, updateLibroMayor } = require('../controllers/libromayor.controller');
 
-// router.get('/', listarCuentas);
-// router.get('/:idCuenta', listarOneCuenta);
+router.get('/', listarAllLibroMayor);
+router.get('/:idMayor', listarOneLibroMayor);
 router.post('/create', crearLibromayor);
-// router.put('/update/:idCuenta', updateCuentas);
-// router.delete('/delete/:idCuenta', deleteCuentas);
+router.put('/update/:idMayor', updateLibroMayor);
+router.delete('/delete/:idMayor', deleteLibroMayor);
 // router.get('/pdf', createPDF);
 // router.get('/excel', createExcel);
 
