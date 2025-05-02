@@ -6,6 +6,7 @@ const RESPONSE = require('../utils/response');
 async function listarAllLibroMayor(req, res) {
   await listLibroMayorSort()
     .then((libroMayorEncontrados) => {
+      libroMayorEncontrados = libroMayorEncontrados.filter((libMayor) => libMayor.id_cuenta !== null);
       return RESPONSE.success(req, res, libroMayorEncontrados, 200);
     })
     .catch((err) => {

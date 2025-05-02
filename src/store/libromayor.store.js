@@ -3,7 +3,7 @@ const model = require('../model/libromayor.model');
 // Funciona para listar la cuenta ya en moongo
 async function listLibroMayorSort() {
   return await model
-    .find({})
+    .find()
     .populate({
       path: 'id_cuenta',
       model: 'cuentas',
