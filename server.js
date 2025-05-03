@@ -3,7 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 
-const cuentaRoutes = require("./src/routes/cuentaRoutes");
+const cuentadRoutes = require("./src/routes/cuentadRoutes");
 const cuentaiRoutes = require("./src/routes/cuentaiRoutes");
 
 const app = express();
@@ -20,7 +20,7 @@ app.use(cors());
 app.use(express.json());
 
 // Rutas
-app.use("/cuentas", cuentaRoutes);
+app.use("/cuentad", cuentadRoutes);
 app.use("/cuentai", cuentaiRoutes);
 
 // Servidor
