@@ -1,5 +1,5 @@
 {
-  "name": "contabididad-backend",
+  "name": "contabilidad-back",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -9,8 +9,7 @@
     "@testing-library/user-event": "^13.5.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
-    "express": "^5.1.0",
-    "mongoose": "^8.14.1",
+    "mongoose": "^8.14.2",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-scripts": "5.0.1",

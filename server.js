@@ -1,9 +1,27 @@
-const mongoose = require('mongoose');
-const app = require('./app');
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const mongoose = require("mongoose");
 
-mongoose.Promise = global.Promise;
+const app = express();
+const PORT = process.env.PORT || 5000;
+const partidaiRoutes = require("./src/routes/partidaiRoutes");
+const partidadRoutes = require("./src/routes/partidadRoutes");
 
-mongoose.connect('mongodb://localhost:27017/proyecto_contabilidad').then(() => {
-  const PORT = 3500;
-  app.listen(PORT, () => console.log(`Escuchando http://localhost:${PORT}`));
+// Conexión a MongoDB
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => console.log("Conectado a MongoDB"))
+  .catch((err) => console.error("Error al conectar a MongoDB:", err));
+
+// Middlewares
+app.use(cors());
+app.use(express.json());
+app.use("/partidais", partidaiRoutes);
+app.use("/partidas", partidadRoutes);
+
+
+// Servidor
+app.listen(PORT, () => {
+  console.log(`Servidor escuchando en puerto${PORT}`);
 });

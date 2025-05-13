@@ -14,7 +14,7 @@ async function agregar(req, res) {
   try {
     const data = req.body;
     const partida = await store.agregarPartidaI(data);
-    res.status(201).json({ success: true, partida });
+    res.status(201).json({ success: true, partida }); // ← así devuelves una propiedad consistente
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
