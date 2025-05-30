@@ -1,4 +1,4 @@
-const RegistroBalance = require("../models/balance.model");
+const RegistroBalance = require("../model/balanceComprobacion.model");
 
 function agregarRegistro(data) {
   const nuevo = new RegistroBalance(data);
@@ -17,4 +17,5 @@ module.exports = {
   agregarRegistro,
   obtenerRegistros,
   eliminarRegistro
+
 };

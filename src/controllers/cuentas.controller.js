@@ -43,7 +43,7 @@ async function createCuentas(req, res) {
     id_cuenta: !getLastItem ? 1 : getLastItem.id_cuenta + 1,
   };
 
-  saveCuenta(cuenta)
+  createCuentasNew(cuenta)
     .then((data) => RESPONSE.success(req, res, data, 201))
     .catch((err) => {
       console.log('Error al guardar cuenta:', err);

@@ -1,31 +1,51 @@
-const store = require("../store/balance.store");
+const store = require("../store/balanceComprobacion.store");
 
 async function agregar(req, res) {
   try {
-    const { cuenta, debito, credito, fecha } = req.body;
+    const { fecha, registros } = req.body;
 
-    if (!cuenta || (!debito && !credito)) {
+    if (!fecha || !Array.isArray(registros) || registros.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Debe proporcionar una cuenta y un valor en débito o crédito.",
+        message: "Debe proporcionar una fecha y al menos un registro.",
       });
     }
 
-    if (debito && credito) {
-      return res.status(400).json({
-        success: false,
-        message: "Solo se puede tener un valor en débito o en crédito, no ambos.",
-      });
+    // Validar cada registro
+    for (const r of registros) {
+      if (!r.cuenta || (r.debito == null && r.credito == null)) {
+        return res.status(400).json({
+          success: false,
+          message: "Cada registro debe tener una cuenta y un valor en débito o crédito.",
+        });
+      }
+
+      if (r.debito && r.credito) {
+        return res.status(400).json({
+          success: false,
+          message: "Cada registro solo debe tener débito o crédito, no ambos.",
+        });
+      }
     }
 
-    const nuevoRegistro = await store.agregarRegistro({
-      cuenta,
-      debito: parseFloat(debito) || 0,
-      credito: parseFloat(credito) || 0,
-      fecha: new Date(fecha),
+    // Guardar todos los registros
+    const resultados = await Promise.all(
+      registros.map(async (r) => {
+        return await store.agregarRegistro({
+          cuenta: r.cuenta,
+          debito: parseFloat(r.debito) || 0,
+          credito: parseFloat(r.credito) || 0,
+          fecha: new Date(fecha),
+        });
+      })
+    );
+
+    res.status(201).json({
+      success: true,
+      mensaje: "Registros guardados correctamente.",
+      registros: resultados,
     });
 
-    res.status(201).json({ success: true, registro: nuevoRegistro });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

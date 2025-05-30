@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const controller = require("../controllers/balance.controller");
+const controller = require("../controllers/balanceComprobacion.controller");
 
 router.post("/", controller.agregar);
 router.get("/", controller.listar);
