@@ -6,7 +6,7 @@ function agregarVenta(data) {
 }
 
 function obtenerVentas() {
-  return Venta.find().populate("facturas");
+  return Venta.find().populate("factura"); 
 }
 
 function eliminarVenta(id) {
