@@ -32,25 +32,22 @@ async function createCuentas(req, res) {
   const { nombre, tipo } = req.body;
 
   const getLastItem = await listCuentasSort()
-    .then((result) => result)
     .catch((err) => {
       console.log('Error', err);
-      return RESPONSE.error(req, res, 'Error interno', 500);
+      return null;
     });
 
   const cuenta = {
     nombre,
     tipo,
-    id_cuenta: getLastItem.length == 0 ? 1 : getLastItem.id_cuenta + 1,
+    id_cuenta: !getLastItem ? 1 : getLastItem.id_cuenta + 1,
   };
 
-  createCuentasNew(cuenta)
-    .then((cuentaCreada) => {
-      return RESPONSE.success(req, res, cuentaCreada, 201);
-    })
+  saveCuenta(cuenta)
+    .then((data) => RESPONSE.success(req, res, data, 201))
     .catch((err) => {
-      console.log(err);
-      return RESPONSE.error(req, res, 'Error interno', 500);
+      console.log('Error al guardar cuenta:', err);
+      RESPONSE.error(req, res, 'Error al guardar la cuenta', 500);
     });
 }
 
