@@ -1,8 +1,8 @@
 const model = require('../model/cuentas.model');
 
 // Funciona para listar la cuenta ya en moongo
-async function listAllCuentas() {
-  return await model.find({}).sort({ fecha_creacion: -1 });
+async function listAllCuentas(filter = {}) {
+  return await model.find(filter).sort({ fecha_creacion: -1 });
 }
 async function listCuentasSort() {
   return await model.findOne({}).sort({ id_cuenta: -1 });

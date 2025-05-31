@@ -1,6 +1,7 @@
 /* Componentes */
 const cuentas = require('./cuentas.network');
 const libroMayor = require('./libromayor.network');
+const estadosResultados = require('./estadosResultados.network');
 const comprasServicios = require('./comprasServicios.network');
 const Inventario = require('./Inventario.network');
 const factura = require('./factura.network');
@@ -10,6 +11,7 @@ const balanceComprobacion = require('./venta.network');
 const routes = (app) => {
   app.use('/cuentas', cuentas);
   app.use('/libromayor', libroMayor);
+  app.use('/estadosresultados', estadosResultados);
   app.use('/cuentas', cuentas);
   app.use('/Inventario', Inventario);
   app.use('/comprasServicios', comprasServicios);
