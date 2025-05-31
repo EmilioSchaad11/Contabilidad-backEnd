@@ -170,42 +170,152 @@ async function crearLibromayor(req, res, isUpdate = false) {
   }
 }
 
+// En libromayor.controller.js, reemplaza únicamente la función updateLibroMayor por lo siguiente:
+
+// En libromayor.controller.js, reemplaza únicamente la función updateLibroMayor por lo siguiente:
+
 async function updateLibroMayor(req, res) {
   const idMayor = req.params.idMayor;
-  let nn = crearLibromayor(req, res, true)
-    .then(async (result) => {
-      delete result.id_mayor;
-      await updateLibroMayorStore(idMayor, result)
-        .then((mayorModificada) => RESPONSE.success(req, res, mayorModificada, 200))
-        .catch((err) => {
-          console.log(err);
-          RESPONSE.error(req, res, 'Error a la hora de encontrar cuenta', 500);
-        });
-    })
-    .catch((err) => {
-      console.log(err);
-      return RESPONSE.error(req, res, 'Error interno', 500);
-    });
 
-  return;
-  findCuentas(idCuenta)
-    .then((cuentaEncontrada) => {
-      if (!cuentaEncontrada) {
-        return RESPONSE.error(req, res, 'Cuenta no encontrada', 404);
-      } else {
-        const parametros = req.body;
-        updataCuentas(idCuenta, parametros)
-          .then((cuentaModificada) => RESPONSE.success(req, res, cuentaModificada, 200))
-          .catch((err) => {
-            console.log(err);
-            RESPONSE.error(req, res, 'Error a la hora de encontrar cuenta', 500);
-          });
-      }
-    })
-    .catch((err) => {
-      console.log(err);
-      return RESPONSE.error(req, res, 'Error en la busqueda');
+  try {
+    // 1) Primero buscamos el LibroMayor existente:
+    const libroExistente = await findLibroMayor(idMayor);
+    if (!libroExistente) {
+      return RESPONSE.error(req, res, 'Libro Mayor no encontrado para actualizar.', 404);
+    }
+
+    // 2) Extraemos id_cuenta, fecha_inicio y fecha_fin del registro existente:
+    //    (Nota: cuando se usó populate, id_cuenta viene como objeto con la info de la cuenta.
+    //     Pero en el store/model original, id_cuenta es un número. Por eso hacemos este chequeo.)
+    let id_cuenta;
+    if (libroExistente.id_cuenta && typeof libroExistente.id_cuenta === 'object') {
+      // Si viene poblado (populate), asumimos que el subdocumento tiene un campo numérico "id_cuenta"
+      id_cuenta = libroExistente.id_cuenta.id_cuenta || libroExistente.id_cuenta;
+    } else {
+      // Si no está poblado, tomamos el valor directamente
+      id_cuenta = libroExistente.id_cuenta;
+    }
+
+    const fecha_inicio = libroExistente.fecha_inicio;
+    const fecha_fin = libroExistente.fecha_fin;
+
+    // 3) Volvemos a ejecutar la agregación para obtener todos los movimientos dentro del rango:
+    const movimientosResp = await listDetallePartidaDiarioCondicion([
+      {
+        $match: {
+          id_cuenta: id_cuenta,
+        },
+      },
+      {
+        $lookup: {
+          from: 'partida_diario',
+          localField: 'id_partidaDiario',
+          foreignField: 'id_partidaDiario',
+          let: {
+            fechaInicio: fecha_inicio,
+            fechaFin: fecha_fin,
+          },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $or: [
+                    {
+                      $and: [{ $gte: ['$Fecha', '$$fechaInicio'] }, { $lte: ['$Fecha', '$$fechaFin'] }],
+                    },
+                    { $eq: ['$Fecha', null] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'partidaDiarioInfo',
+        },
+      },
+      {
+        $match: {
+          'partidaDiarioInfo.0': { $exists: true },
+        },
+      },
+      {
+        $project: {
+          id_partidaDiario: 1,
+          Debe: 1,
+          Haber: 1,
+          id_cuenta: 1,
+        },
+      },
+    ]);
+
+    // 4) Obtenemos el último id_mayor existente (para asignar uno nuevo si fuera “create”,
+    //    pero en update no lo usamos; lo sacamos solo para preservar la lógica):
+    const ultimoMayor = await listLibroMayorSortOne();
+
+    // 5) Creamos el objeto “modeloActualizado” con la misma estructura que usaría crearLibromayor:
+    const modeloActualizado = {
+      id_mayor: libroExistente.id_mayor, // mantenemos el mismo
+      id_cuenta: id_cuenta,
+      fecha_inicio,
+      fecha_fin,
+      saldo_inicial: 0,
+      saldo_final: 0,
+      movimientos: [],
+    };
+
+    // 6) Calculamos el saldo inicial basado en cualquier libro previo a este rango:
+    const libroPrevio = await findLibroMayorOpcional({
+      id_cuenta: id_cuenta,
+      fecha_fin: { $lt: fecha_inicio },
     });
+    if (libroPrevio && typeof libroPrevio.saldo_final === 'number') {
+      modeloActualizado.saldo_inicial = libroPrevio.saldo_final;
+    } else {
+      modeloActualizado.saldo_inicial = 0;
+    }
+
+    // 7) Recorremos “movimientosResp” para armar el array de movimientos y sumar débitos/créditos:
+    let sumaDebito = 0;
+    let sumaCredito = 0;
+
+    for (const registro of movimientosResp) {
+      // Obtenemos información detallada de la partidaDiario para tomar fecha y descripción:
+      const detallePartida = await listPartidaDiarioCondicion([{ $match: { id_partidaDiario: registro.id_partidaDiario } }]).then((r) => r[0] || null);
+
+      // Si no encontramos el detalle de partida, lo saltamos:
+      if (!detallePartida) continue;
+
+      const objMovimiento = {
+        fecha: detallePartida.Fecha || null,
+        descripcion: detallePartida.Descripcion || '',
+        debito: Number(registro.Debe) || 0,
+        credito: Number(registro.Haber) || 0,
+      };
+
+      sumaDebito += objMovimiento.debito;
+      sumaCredito += objMovimiento.credito;
+      modeloActualizado.movimientos.push(objMovimiento);
+    }
+
+    // 8) Calculamos el saldo_final:
+    //    saldo_final = saldo_inicial + (sumaDebito - sumaCredito)
+    modeloActualizado.saldo_final = modeloActualizado.saldo_inicial + (sumaDebito - sumaCredito);
+
+    // 9) Validamos que saldo_final efectivamente sea un número:
+    if (typeof modeloActualizado.saldo_final !== 'number' || isNaN(modeloActualizado.saldo_final)) {
+      modeloActualizado.saldo_final = 0;
+    }
+
+    // 10) Ejecutamos el update en MongoDB:
+    const mayorModificado = await updateLibroMayorStore(idMayor, modeloActualizado);
+    if (!mayorModificado) {
+      return RESPONSE.error(req, res, 'No se pudo actualizar el Libro Mayor.', 500);
+    }
+
+    return RESPONSE.success(req, res, mayorModificado, 200);
+  } catch (err) {
+    console.log('Error en updateLibroMayor:', err);
+    return RESPONSE.error(req, res, 'Error interno', 500);
+  }
 }
 
 async function deleteLibroMayor(req, res) {
