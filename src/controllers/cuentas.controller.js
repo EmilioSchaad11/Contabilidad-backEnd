@@ -1,9 +1,8 @@
-const { response } = require('express');
 const { listAllCuentas, listCuentasSort, createCuentasNew, findCuentas, updataCuentas, removecuenta } = require('../store/cuentas.store');
 const RESPONSE = require('../utils/response');
 
 async function listarCuentas(req, res) {
-  listAllCuentas()
+  await listAllCuentas()
     .then((cuentasEncontradas) => {
       return RESPONSE.success(req, res, cuentasEncontradas, 200);
     })

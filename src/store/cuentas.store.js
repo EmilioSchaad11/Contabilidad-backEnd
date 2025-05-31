@@ -2,7 +2,7 @@ const model = require('../model/cuentas.model');
 
 // Funciona para listar la cuenta ya en moongo
 async function listAllCuentas() {
-  return await model.find({});
+  return await model.find({}).sort({ fecha_creacion: -1 });
 }
 async function listCuentasSort() {
   return await model.findOne({}).sort({ id_cuenta: -1 });
@@ -24,7 +24,7 @@ async function updataCuentas(idCuenta, body) {
 
 // Funciona para eliminar la cuenta ya en moongo
 async function removecuenta(idCuenta) {
-  return await model.findOneAndDelete(idCuenta);
+  return await model.findOneAndDelete({ id_cuenta: idCuenta });
 }
 
 module.exports = {
